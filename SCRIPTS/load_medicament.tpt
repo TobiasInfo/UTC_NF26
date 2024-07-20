@@ -1,0 +1,63 @@
+DEFINE JOB LoadMedicament_TEST
+DESCRIPTION 'Load data into STG.CHAMBRE from a file'
+(
+    DEFINE SCHEMA MedicamentSchema
+    (
+        CD_MEDICAMENT VARCHAR(10) ,
+        NOM_MEDICAMENT VARCHAR(250),
+        CONDIT_MEDICAMENT VARCHAR(100),
+        CATG_MEDICAMENT VARCHAR(100),
+        MARQUE_FABRI VARCHAR(100) 
+    );
+
+    DEFINE OPERATOR op_Medicament
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA MedicamentSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'delimited',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+
+    DEFINE OPERATOR od_Medicament
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+    
+    DEFINE OPERATOR ol_Medicament
+    TYPE UPDATE
+    SCHEMA MedicamentSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.MEDICAMENT'
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.MEDICAMENT;')
+        TO OPERATOR (od_Medicament);
+    );
+
+    STEP Load_Medicament
+    (
+        APPLY
+        (
+            'INSERT INTO STG.MEDICAMENT (CD_MEDICAMENT, NOM_MEDICAMENT, CONDIT_MEDICAMENT, CATG_MEDICAMENT, MARQUE_FABRI)
+            VALUES (:CD_MEDICAMENT, :NOM_MEDICAMENT, :CONDIT_MEDICAMENT, :CATG_MEDICAMENT, :MARQUE_FABRI);'
+        )
+        TO OPERATOR (ol_Medicament)
+        SELECT * FROM OPERATOR (op_Medicament);
+    );
+);

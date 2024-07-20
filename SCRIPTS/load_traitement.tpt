@@ -1,0 +1,66 @@
+DEFINE JOB LoadTraitement
+DESCRIPTION 'Load data into STG.TRAITEMENT from a file'
+(
+    DEFINE SCHEMA TraitementSchema
+    (
+        ID_TRAITEMENT VARCHAR(15),
+        CD_MEDICAMENT VARCHAR(10),
+        CATG_MEDICAMENT VARCHAR(100),
+        MARQUE_FABRI VARCHAR(100),
+        QTE_MEDICAMENT VARCHAR(50),
+        DSC_POSOLOGIE VARCHAR(100),
+        ID_CONSULT VARCHAR(15),
+        TS_CREATION_TRAITEMENT VARCHAR(19)
+    );
+
+    DEFINE OPERATOR op_Traitement
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA TraitementSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'DELIMITED',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+    
+    DEFINE OPERATOR od_Traitement
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+
+    DEFINE OPERATOR ol_Traitement
+    TYPE UPDATE
+    SCHEMA TraitementSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.TRAITEMENT'  
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.TRAITEMENT;')
+        TO OPERATOR (od_Traitement);
+    );
+    
+    STEP Load_Traitement
+    (
+        APPLY
+        (
+            'INSERT INTO STG.TRAITEMENT (ID_TRAITEMENT, CD_MEDICAMENT, CATG_MEDICAMENT, MARQUE_FABRI, QTE_MEDICAMENT, DSC_POSOLOGIE, ID_CONSULT, TS_CREATION_TRAITEMENT)
+             VALUES (CAST(:ID_TRAITEMENT AS BIGINT), :CD_MEDICAMENT, :CATG_MEDICAMENT, :MARQUE_FABRI, CAST(:QTE_MEDICAMENT AS SMALLINT), :DSC_POSOLOGIE, CAST(:ID_CONSULT AS BIGINT), CAST(:TS_CREATION_TRAITEMENT AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''));'
+        )
+        TO OPERATOR (ol_Traitement)
+        SELECT * FROM OPERATOR (op_Traitement);
+    );
+);

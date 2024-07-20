@@ -1,0 +1,81 @@
+DEFINE JOB LoadPersonnel
+DESCRIPTION 'Load data into STG.PERSONNEL from a file'
+(
+    DEFINE SCHEMA PersonnelSchema
+    (
+        ID_PERSONNEL VARCHAR(15),
+        NOM_PERSONNEL VARCHAR(100),
+        PRENOM_PERSONNEL VARCHAR(100),
+        FONCTION_PERSONNEL VARCHAR(50),
+        TS_DEBUT_ACTIVITE VARCHAR(19),
+        TS_FIN_ACTIVITE VARCHAR(19),
+        RAISON_FIN_ACTIVITE VARCHAR(100),
+        TS_CREATION_PERSONNEL VARCHAR(10),
+        TS_MAJ_PERSONNEL VARCHAR(10),
+        CD_STATUT_PERSONNEL VARCHAR(10)
+    );
+
+    DEFINE OPERATOR op_Personnel
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA PersonnelSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'DELIMITED',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows = 1,
+        VARCHAR RowDelimiter = '\n'
+    );
+
+
+    DEFINE OPERATOR ol_Personnel
+    TYPE UPDATE
+    SCHEMA PersonnelSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.PERSONNEL'
+    );
+    
+    DEFINE OPERATOR od_Personnel
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.PERSONNEL;')
+        TO OPERATOR (od_Personnel);
+    );
+
+    STEP Load_Personnel
+    (
+        APPLY
+        (
+            'INSERT INTO STG.PERSONNEL (ID_PERSONNEL, NOM_PERSONNEL, PRENOM_PERSONNEL, FONCTION_PERSONNEL, TS_DEBUT_ACTIVITE, TS_FIN_ACTIVITE, RAISON_FIN_ACTIVITE, TS_CREATION_PERSONNEL, TS_MAJ_PERSONNEL, CD_STATUT_PERSONNEL)
+            VALUES (
+                CAST(:ID_PERSONNEL AS INTEGER), 
+                :NOM_PERSONNEL, 
+                :PRENOM_PERSONNEL, 
+                :FONCTION_PERSONNEL, 
+                CAST(:TS_DEBUT_ACTIVITE AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), 
+                CAST(:TS_FIN_ACTIVITE AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), 
+                :RAISON_FIN_ACTIVITE, 
+                CAST(:TS_CREATION_PERSONNEL AS TIMESTAMP(0) FORMAT ''YYYY-MM-DD''), 
+                CAST(:TS_MAJ_PERSONNEL AS TIMESTAMP(0) FORMAT ''YYYY-MM-DD''), 
+                :CD_STATUT_PERSONNEL
+            );'
+        )
+        TO OPERATOR (ol_Personnel)
+        SELECT * FROM OPERATOR (op_Personnel);
+    );
+
+);

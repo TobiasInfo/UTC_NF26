@@ -1,0 +1,273 @@
+@startuml
+package STAGING <<Database>> {
+    class CHAMBRE {
+        NO_CHAMBRE   : INTEGER      [PK, Obligatoire]
+        NOM_CHAMBRE  : VARCHAR(20)  [Obligatoire]
+        NO_ETAGE     : BYTEINT
+        NOM_BAT      : VARCHAR(20)
+        TYPE_CHAMBRE : VARCHAR(10)
+        PRIX_JOUR    : SMALLINT     [Obligatoire]
+        DT_CREATION  : DATE         [Obligatoire]
+        ---
+    }
+
+    class TRAITEMENT {
+        ID_TRAITEMENT      : INTEGER      [PK, Obligatoire]
+        CD_MEDICAMENT      : INTEGER      [Obligatoire]
+        CATG_MEDICAMENT    : VARCHAR(100) [Obligatoire]
+        MARQUE_FABRI       : VARCHAR(100) [Obligatoire]
+        QTE_MEDICAMENT     : SMALLINT
+        DSC_POSOLOGIE      : VARCHAR(100) [Obligatoire]
+        ID_CONSULT         : INTEGER      [Obligatoire]
+        TS_CREATION_TRAITEMENT : TIMESTAMP(0) [Obligatoire]
+        ---
+    }
+
+    class PERSONNEL {
+        ID_PERSONNEL       : INTEGER      [PK, Obligatoire]
+        NOM_PERSONNEL      : VARCHAR(100) [Obligatoire]
+        PRENOM_PERSONNEL   : VARCHAR(100) [Obligatoire]
+        FONCTION_PERSONNEL : VARCHAR(50)  [Obligatoire]
+        TS_DEBUT_ACTIVITE  : TIMESTAMP(0) [Obligatoire]
+        TS_FIN_ACTIVITE    : TIMESTAMP(0)
+        RAISON_FIN_ACTIVITE : VARCHAR(100)
+        TS_CREATION_PERSONNEL : TIMESTAMP(0) [Obligatoire]
+        TS_MAJ_PERSONNEL   : TIMESTAMP(0) [Obligatoire]
+        CD_STATUT_PERSONNEL : VARCHAR(10)  [Obligatoire]
+        ---
+    }
+
+    class PATIENT {
+        ID_PATIENT         : INTEGER      [PK, Obligatoire]
+        NOM_PATIENT        : VARCHAR(100) [Obligatoire]
+        PRENOM_PATIENT     : VARCHAR(100) [Obligatoire]
+        DT_NAISS           : DATE
+        VILLE_NAISS        : VARCHAR(100)
+        PAYS_NAISS         : VARCHAR(100)
+        NUM_SECU           : VARCHAR(15)
+        IND_PAYS_NUM_TELP  : VARCHAR(5)
+        NUM_TELEPHONE      : VARCHAR(20)
+        NUM_VOIE           : VARCHAR(10)
+        DSC_VOIE           : VARCHAR(250)
+        CMPL_VOIE          : VARCHAR(250)
+        CD_POSTAL          : VARCHAR(10)
+        VILLE              : VARCHAR(100)
+        PAYS               : VARCHAR(100)
+        TS_CREATION_PATIENT : TIMESTAMP(0) [Obligatoire]
+        TS_MAJ_PATIENT     : TIMESTAMP(0) [Obligatoire]
+        ---
+    }
+
+    class CONSULTATION {
+        ID_CONSULT         : INTEGER      [PK, Obligatoire]
+        ID_PERSONNEL       : INTEGER      [Obligatoire]
+        ID_PATIENT         : INTEGER      [Obligatoire]
+        TS_DEBUT_CONSULT   : TIMESTAMP(0) [Obligatoire]
+        TS_FIN_CONSULT     : TIMESTAMP(0) [Obligatoire]
+        POIDS_PATIENT      : INTEGER      [Obligatoire]
+        TEMP_PATIENT       : INTEGER
+        UNIT_TEMP          : VARCHAR(15)
+        TENSION_PATIENT    : INTEGER
+        DSC_PATHO          : VARCHAR(250)
+        INDIC_DIABETE      : VARCHAR(10)
+        ID_TRAITEMENT      : INTEGER
+        INDIC_HOSPI        : VARCHAR(10)
+        ---
+    }
+
+    class HOSPITALISATION {
+        ID_HOSPI           : INTEGER      [PK, Obligatoire]
+        ID_CONSULT         : INTEGER      [Obligatoire]
+        NO_CHAMBRE         : SMALLINT     [Obligatoire]
+        TS_DEBUT_HOSPI     : TIMESTAMP(0) [Obligatoire]
+        TS_FIN_HOSPI       : TIMESTAMP(0)
+        COUT_HOSPI         : TIMESTAMP(0)
+        ID_PERSONNEL_RESP  : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class MEDICAMENT {
+        CD_MEDICAMENT      : VARCHAR(10)  [PK, Obligatoire]
+        NOM_MEDICAMENT     : VARCHAR(250)
+        CONDIT_MEDICAMENT  : VARCHAR(100)
+        CATG_MEDICAMENT    : VARCHAR(100) [Obligatoire]
+        MARQUE_FABRI       : VARCHAR(100) [Obligatoire]
+        ---
+    }
+
+    TRAITEMENT::ID_CONSULT -> CONSULTATION::ID_CONSULT : "Est liée à"
+    TRAITEMENT::CD_MEDICAMENT -> MEDICAMENT::CD_MEDICAMENT : "Contient"
+
+    CONSULTATION::ID_PERSONNEL --> PERSONNEL::ID_PERSONNEL : "Est réalisée par"
+    CONSULTATION::ID_PATIENT --> PATIENT::ID_PATIENT : "Est réalisée pour"
+    CONSULTATION::ID_TRAITEMENT -> TRAITEMENT::ID_TRAITEMENT : "Contient"
+    
+    HOSPITALISATION::ID_CONSULT --> CONSULTATION::ID_CONSULT : "Est liée à"
+    HOSPITALISATION::ID_PERSONNEL_RESP --> PERSONNEL::ID_PERSONNEL : "Est réalisée par"
+    HOSPITALISATION::NO_CHAMBRE -> CHAMBRE::NO_CHAMBRE : "Est réalisée dans"
+}
+
+package SOCLE <<Database>> {
+    class R_ROOM {
+        ROOM_NUM     : INTEGER      [PK, Obligatoire]
+        ROOM_NAME    : VARCHAR(20)  [Obligatoire]
+        FLOR_NUM    : BYTEINT
+        BULD_NAME : VARCHAR(20)
+        ROOM_TYP : VARCHAR(10)
+        ROOM_DAY_RATE    : SMALLINT     [Obligatoire]
+        CRTN_DT  : DATE         [Obligatoire]
+        EXEC_ID      : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class O_TRET {
+        TRET_ID      : INTEGER      [PK, Obligatoire]
+        MEDC_ID      : INTEGER      [Obligatoire]
+        MEDC_QTY    : SMALLINT
+        DOSG_DSC    : VARCHAR(100) [Obligatoire]
+        CONS_ID      : INTEGER      [Obligatoire]
+        TRET_CRTN_DTTM : TIMESTAMP(0) [Obligatoire]
+        EXEC_ID      : INTEGER      [Obligatoire]
+        ---
+    }
+    class R_PART {
+        PART_ID       : INTEGER      [PK, Obligatoire]
+        SRC_ID        : INTEGER      [Obligatoire]
+        SRC_TYP       : VARCHAR(50)  [Obligatoire]
+        ---
+    }
+
+    class O_INDIV {
+        PART_ID       : INTEGER      [PK, Obligatoire]
+        INDV_NAME     : VARCHAR(100) [Obligatoire]
+        INDIV_FIRS_NAME   : VARCHAR(100) [Obligatoire]
+        INDV_STTS_CD : VARCHAR(10)  [Obligatoire]
+        CRTN_DTTM     : TIMESTAMP(0) [Obligatoire]
+        UPDT_DTTM     : TIMESTAMP(0) [Obligatoire]
+        EXEC_ID       : INTEGER      [Obligatoire]
+        BIRT_DT       : DATE
+        BIRT_CITY     : VARCHAR(100)
+        BIRT_CNTR     : VARCHAR(100)
+        SOCL_NUM      : VARCHAR(15)
+        ---
+    }
+
+    class O_STFF {
+        PART_ID       : INTEGER      [PK, Obligatoire]
+        WORK_STRT_DTTM : TIMESTAMP(0) [Obligatoire]
+        WORK_END_DTTM : TIMESTAMP(0)
+        WORK_END_RESN : VARCHAR(100)
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class O_TELP {
+        PART_ID       : INTEGER      [PK, Obligatoire]
+        CNTR_CD       : VARCHAR(5)
+        TELP_NUM      : VARCHAR(20) [Obligatoire]
+        STRT_VALD_DTTM : TIMESTAMP(0) [Obligatoire]
+        END_VALD_DTTM : TIMESTAMP(0) [Obligatoire]
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class O_ADDR {
+        PART_ID       : INTEGER      [PK, Obligatoire]
+        STRT_NUM      : VARCHAR(10) [Obligatoire]
+        STRT_DSC      : VARCHAR(250) [Obligatoire]
+        COMP_STRT     : VARCHAR(250)
+        POST_CD       : VARCHAR(10) [Obligatoire]
+        CITY_NAME     : VARCHAR(100)
+        CNTR_NAME     : VARCHAR(100)
+        STRT_VALD_DTTM : TIMESTAMP(0) [Obligatoire]
+        END_VALD_DTTM : TIMESTAMP(0) [Obligatoire]
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class O_CONS {
+        CONS_ID       : INTEGER      [PK, Obligatoire]
+        STFF_ID       : INTEGER      [Obligatoire]
+        PATN_ID       : INTEGER      [Obligatoire]
+        CONS_STRT_DTTM : TIMESTAMP(0) [Obligatoire]
+        CONS_END_DTTM : TIMESTAMP(0) [Obligatoire]
+        PATN_WEGH     : INTEGER      [Obligatoire]
+        PATN_TEMP     : INTEGER
+        TEMP_UNIT     : VARCHAR(15)
+        BLD_PRSS      : INTEGER
+        PATH_DSC      : VARCHAR(250)
+        DIBT_IND      : BYTEINT
+        TRET_ID       : INTEGER
+        HOSP_IND      : BYTEINT
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class O_HOSP {
+        HOSP_ID       : INTEGER      [PK, Obligatoire]
+        CONS_ID       : INTEGER      [Obligatoire]
+        ROOM_NUM      : SMALLINT     [Obligatoire]
+        HOSP_STRT_DTTM : TIMESTAMP(0) [Obligatoire]
+        HOSP_END_DTTM : TIMESTAMP(0)  [Obligatoire]
+        HOSP_FINL_RATE : TIMESTAMP(0) [Obligatoire]
+        STFF_ID       : INTEGER      [Obligatoire]
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    class R_MEDC {
+        MEDC_ID       : INTEGER  [PK, Obligatoire]
+        MEDC_CD       : VARCHAR(10) [Obligatoire]
+        MEDC_NAME     : VARCHAR(250)
+        MEDC_COND     : VARCHAR(100)
+        MEDC_CATG     : VARCHAR(100) [Obligatoire]
+        MEDC_BRND     : VARCHAR(100) [Obligatoire]
+        EXEC_ID       : INTEGER      [Obligatoire]
+        ---
+    }
+
+    O_INDIV::PART_ID --> R_PART::PART_ID : "est"
+
+    O_STFF::PART_ID --> R_PART::PART_ID : "est"
+
+    O_TELP::PART_ID --> R_PART::PART_ID : "Appartient à"
+
+    O_CONS::STFF_ID --> R_PART::PART_ID : "Est réalisée par"
+    O_CONS::PATN_ID --> R_PART::PART_ID : "Est réalisée pour"
+    O_CONS::TRET_ID -> O_TRET::TRET_ID : "Contient"
+
+    O_TRET::MEDC_ID -> R_MEDC::MEDC_ID : "Contient"
+    O_TRET::CONS_ID --> O_CONS::CONS_ID : "Est liée à"
+
+    O_HOSP::STFF_ID --> R_PART::PART_ID : "Est réalisée par"
+    O_HOSP::CONS_ID --> O_CONS::CONS_ID : "Est liée à"
+    O_HOSP::ROOM_NUM -> R_ROOM::ROOM_NUM : "Est liée à"
+
+    O_ADDR::PART_ID --> R_PART::PART_ID : "est"
+}
+
+package TECHNIQUE <<Database>> {
+    class T_SUIV_TRMT {
+        RUN_ID        : INTEGER      [Obligatoire]
+        EXEC_ID       : INTEGER      [PK, Obligatoire]
+        SCRPT_NAME    : VARCHAR(250) [Obligatoire]
+        EXEC_STRT_DTTM : TIMESTAMP(0) [Obligatoire]
+        EXEC_END_DTTM : TIMESTAMP(0)
+        EXEC_STTS_CD  : VARCHAR(10)  [Obligatoire]
+        ---
+    }
+
+    class T_SUIV_RUN {
+        RUN_ID        : INTEGER      [PK, Obligatoire]
+        RUN_STRT_DTTM : TIMESTAMP(0) [Obligatoire]
+        RUN_END_DTTM : TIMESTAMP(0)
+        RUN_STTS_CD  : VARCHAR(10)  [Obligatoire]
+        ---
+    }
+
+    ' Execution relation
+    T_SUIV_TRMT::EXEC_ID --> SOCLE::EXEC_ID : "Est associé à l'exécution de"
+
+    T_SUIV_TRMT::RUN_ID -> T_SUIV_RUN::RUN_ID : "Est liée à"
+}
+@enduml

@@ -1,0 +1,66 @@
+DEFINE JOB LoadChambre
+DESCRIPTION 'Load data into STG.CHAMBRE from a file'
+(
+    DEFINE SCHEMA ChambreSchema
+    (
+        NO_CHAMBRE VARCHAR(250),
+        NOM_CHAMBRE VARCHAR(250),
+        NO_ETAGE VARCHAR(250),
+        NOM_BAT VARCHAR(250),
+        TYPE_CHAMBRE VARCHAR(250),
+        PRIX_JOUR VARCHAR(250),
+        DT_CREATION VARCHAR(250)
+    );
+
+    DEFINE OPERATOR op_Chambre
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA ChambreSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'delimited',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+
+    DEFINE OPERATOR od_Chambre
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+    
+    DEFINE OPERATOR ol_Chambre
+    TYPE UPDATE
+    SCHEMA ChambreSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.CHAMBRE'
+    );
+
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.CHAMBRE;')
+        TO OPERATOR (od_Chambre);
+    );
+
+    STEP Load_Chambre
+    (
+        APPLY
+        (
+            'INSERT INTO STG.CHAMBRE (NO_CHAMBRE, NOM_CHAMBRE, NO_ETAGE, NOM_BAT, TYPE_CHAMBRE, PRIX_JOUR, DT_CREATION)
+             VALUES (CAST(:NO_CHAMBRE AS INTEGER), :NOM_CHAMBRE, CAST(:NO_ETAGE AS BYTEINT), :NOM_BAT, :TYPE_CHAMBRE, CAST(:PRIX_JOUR AS SMALLINT), CAST(:DT_CREATION AS DATE FORMAT ''YYYY-MM-DD''));'
+        )
+        TO OPERATOR (ol_Chambre)
+        SELECT * FROM OPERATOR (op_Chambre);
+    );
+);

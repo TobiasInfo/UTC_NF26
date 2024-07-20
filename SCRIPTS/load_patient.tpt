@@ -1,0 +1,75 @@
+DEFINE JOB LoadPatient
+DESCRIPTION 'Load data into STG.PATIENT from a file'
+(
+    DEFINE SCHEMA PatientSchema
+    (
+        ID_PATIENT VARCHAR(250),
+        NOM_PATIENT VARCHAR(250),
+        PRENOM_PATIENT VARCHAR(250),
+        DT_NAISS VARCHAR(250),
+        VILLE_NAISS VARCHAR(250),
+        PAYS_NAISS VARCHAR(250),
+        NUM_SECU VARCHAR(250),
+        IND_PAYS_NUM_TELP VARCHAR(250),
+        NUM_TELEPHONE VARCHAR(250),
+        NUM_VOIE VARCHAR(250),
+        DSC_VOIE VARCHAR(250),
+        CMPL_VOIE VARCHAR(250),
+        CD_POSTAL VARCHAR(250),
+        VILLE VARCHAR(250),
+        PAYS VARCHAR(250),
+        TS_CREATION_PATIENT VARCHAR(250),
+        TS_MAJ_PATIENT VARCHAR(250)
+    );
+
+    DEFINE OPERATOR op_Patient
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA PatientSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'delimited',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+    DEFINE OPERATOR od_Patient
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+    
+    
+    DEFINE OPERATOR ol_Patient
+    TYPE UPDATE
+    SCHEMA PatientSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.PATIENT'
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.PATIENT;')
+        TO OPERATOR (od_Patient);
+    );
+
+    STEP Load_Patient
+    (
+        APPLY
+        (
+            'INSERT INTO STG.PATIENT (ID_PATIENT, NOM_PATIENT, PRENOM_PATIENT, DT_NAISS, VILLE_NAISS, PAYS_NAISS, NUM_SECU, IND_PAYS_NUM_TELP, NUM_TELEPHONE, NUM_VOIE, DSC_VOIE, CMPL_VOIE, CD_POSTAL, VILLE, PAYS, TS_CREATION_PATIENT, TS_MAJ_PATIENT)
+             VALUES (CAST(:ID_PATIENT AS INTEGER), :NOM_PATIENT, :PRENOM_PATIENT, CAST(:DT_NAISS AS DATE FORMAT ''YYYY-MM-DD''), :VILLE_NAISS, :PAYS_NAISS, :NUM_SECU, :IND_PAYS_NUM_TELP, :NUM_TELEPHONE, :NUM_VOIE, :DSC_VOIE, :CMPL_VOIE, :CD_POSTAL, :VILLE, :PAYS, CAST(:TS_CREATION_PATIENT AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), CAST(:TS_MAJ_PATIENT AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''));'
+        )
+        TO OPERATOR (ol_Patient)
+        SELECT * FROM OPERATOR (op_Patient);
+    );
+);

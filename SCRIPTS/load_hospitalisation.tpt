@@ -1,0 +1,64 @@
+DEFINE JOB LoadHospitalisation
+DESCRIPTION 'Load data into STG.HOSPITALISATION from a file'
+(
+    DEFINE SCHEMA HospitalisationSchema
+    (
+        ID_HOSPI VARCHAR(50),
+        ID_CONSULT VARCHAR(50),
+        NO_CHAMBRE VARCHAR(50),
+        TS_DEBUT_HOSPI VARCHAR(19),
+        TS_FIN_HOSPI VARCHAR(19),
+        COUT_HOSPI VARCHAR(50),
+        ID_PERSONNEL_RESP VARCHAR(50)  
+    );
+
+    DEFINE OPERATOR op_Hospitalisation
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA HospitalisationSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'DELIMITED',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+
+    DEFINE OPERATOR od_Hospitalisation
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+
+    DEFINE OPERATOR ol_Hospitalisation
+    TYPE UPDATE
+    SCHEMA HospitalisationSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.HOSPITALISATION'
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.HOSPITALISATION;')
+        TO OPERATOR (od_Hospitalisation);
+    );
+    STEP Load_Hospitalisation
+    (
+        APPLY
+        (
+            'INSERT INTO STG.HOSPITALISATION (ID_HOSPI, ID_CONSULT, NO_CHAMBRE, TS_DEBUT_HOSPI, TS_FIN_HOSPI, COUT_HOSPI, ID_PERSONNEL_RESP)
+             VALUES (CAST(:ID_HOSPI AS BIGINT), CAST(:ID_CONSULT AS BIGINT), CAST(:NO_CHAMBRE AS INTEGER), CAST(:TS_DEBUT_HOSPI AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS'' ), CAST(:TS_FIN_HOSPI AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), CAST(:COUT_HOSPI AS DECIMAL(10,2)), CAST(:ID_PERSONNEL_RESP AS INTEGER));'
+        )
+        TO OPERATOR (ol_Hospitalisation)
+        SELECT * FROM OPERATOR (op_Hospitalisation);
+    );
+);

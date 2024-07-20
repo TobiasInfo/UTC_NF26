@@ -1,0 +1,71 @@
+DEFINE JOB LoadConsultation
+DESCRIPTION 'Load data into STG.CONSULTATION from a file'
+(
+    DEFINE SCHEMA ConsultationSchema
+    (
+        ID_CONSULT VARCHAR(50),
+        ID_PERSONNEL VARCHAR(50),
+        ID_PATIENT VARCHAR(50),
+        TS_DEBUT_CONSULT VARCHAR(50),
+        TS_FIN_CONSULT VARCHAR(19),
+        POIDS_PATIENT VARCHAR(15),
+        TEMP_PATIENT VARCHAR(15),
+        UNIT_TEMP VARCHAR(15),
+        TENSION_PATIENT VARCHAR(50),
+        DSC_PATHO VARCHAR(250),
+        INDIC_DIABETE VARCHAR(10),
+        ID_TRAITEMENT VARCHAR(50),
+        INDIC_HOSPI VARCHAR(10)
+    );
+
+    DEFINE OPERATOR op_Consultation
+    TYPE DATACONNECTOR PRODUCER
+    SCHEMA ConsultationSchema
+    ATTRIBUTES
+    (
+        VARCHAR FileName = @FileName,
+        VARCHAR Format = 'DELIMITED',
+        VARCHAR TextDelimiter = ';',
+        VARCHAR OpenMode = 'Read',
+        INTEGER SkipRows=1,
+        VARCHAR RowDelimiter = '\n'
+    );
+
+    DEFINE OPERATOR od_Consultation
+    TYPE DDL
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc'
+    );
+
+    DEFINE OPERATOR ol_Consultation
+    TYPE UPDATE
+    SCHEMA ConsultationSchema
+    ATTRIBUTES
+    (
+        VARCHAR TdpId = 'localhost',
+        VARCHAR UserName = 'dbc',
+        VARCHAR UserPassword = 'dbc',
+        VARCHAR TargetTable = 'STG.CONSULTATION'
+    );
+
+    STEP Setup_Tables
+    (
+        APPLY
+        ('DELETE FROM STG.CONSULTATION;')
+        TO OPERATOR (od_Consultation);
+    );
+
+    STEP Load_Consultation
+    (
+        APPLY
+        (
+            'INSERT INTO STG.CONSULTATION (ID_CONSULT, ID_PERSONNEL, ID_PATIENT, TS_DEBUT_CONSULT, TS_FIN_CONSULT, POIDS_PATIENT, TEMP_PATIENT, UNIT_TEMP, TENSION_PATIENT, DSC_PATHO, INDIC_DIABETE, ID_TRAITEMENT, INDIC_HOSPI)
+             VALUES (CAST(:ID_CONSULT AS BIGINT), CAST(:ID_PERSONNEL AS INTEGER), CAST(:ID_PATIENT AS INTEGER), CAST(:TS_DEBUT_CONSULT AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), CAST(:TS_FIN_CONSULT AS TIMESTAMP(0) FORMAT ''YYYY-MM-DDbHH:MI:SS''), CAST(:POIDS_PATIENT AS DECIMAL(10, 2)), CAST(:TEMP_PATIENT AS DECIMAL(10, 2)), :UNIT_TEMP, CAST(:TENSION_PATIENT AS DECIMAL(10, 2)), :DSC_PATHO, :INDIC_DIABETE, CAST(:ID_TRAITEMENT AS BIGINT), :INDIC_HOSPI);'
+        )
+        TO OPERATOR (ol_Consultation)
+        SELECT * FROM OPERATOR (op_Consultation);
+    );
+);
